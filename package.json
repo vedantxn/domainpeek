@@ -1,0 +1,52 @@
+{
+  "name": "agent-domain",
+  "version": "0.1.0",
+  "description": "Domain availability + cheapest registrar price for AI agents. Zero config.",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "bin": {
+    "agent-domain": "./dist/cli.js"
+  },
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "lint": "tsc --noEmit",
+    "prepublishOnly": "npm run build"
+  },
+  "keywords": [
+    "domain",
+    "availability",
+    "pricing",
+    "registrar",
+    "mcp",
+    "ai-agents",
+    "cli"
+  ],
+  "author": "Vedant",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/vedantnn/agent-domain"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "typescript": "^5.7.0",
+    "vitest": "^3.0.0"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.12.0",
+    "citty": "^0.1.6"
+  }
+}
