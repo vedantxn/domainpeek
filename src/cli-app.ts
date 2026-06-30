@@ -1,6 +1,12 @@
 import { defineCommand, runMain } from "citty";
-import { checkDomain, checkDomains } from "./index.js";
-import type { BatchCheckResult, DomainResult } from "./types.js";
+import { checkDomain, checkDomains, searchName } from "./index.js";
+import type {
+  BatchCheckResult,
+  DnsSignals,
+  DomainResult,
+  NameSearchResult,
+  RegistrationIntel,
+} from "./types.js";
 
 function relativeTime(iso: string): string | null {
   const ms = Date.parse(iso);
@@ -13,6 +19,45 @@ function relativeTime(iso: string): string | null {
   if (diffHr < 24) return `${diffHr}h ago`;
   const diffDay = Math.round(diffHr / 24);
   return `${diffDay}d ago`;
+}
+
+function formatAge(days: number): string {
+  if (days >= 365) return `${(days / 365).toFixed(1)} years`;
+  return `${days} days`;
+}
+
+function formatRegistration(reg: RegistrationIntel): string[] {
+  const lines: string[] = [""];
+  if (reg.dropping_soon) {
+    lines.push("  ⚠ dropping soon (in redemption / pending delete)");
+  }
+  if (reg.registrar) lines.push(`  registrar: ${reg.registrar}`);
+  if (reg.age_days !== null) lines.push(`  age: ${formatAge(reg.age_days)}`);
+  if (reg.expires_in_days !== null) {
+    lines.push(`  expires: in ${reg.expires_in_days} days`);
+  }
+  if (reg.dnssec !== null) lines.push(`  dnssec: ${reg.dnssec ? "yes" : "no"}`);
+  if (reg.nameservers.length > 0) {
+    lines.push(
+      `  nameservers: ${reg.nameservers.slice(0, 4).join(", ").toLowerCase()}`
+    );
+  }
+  return lines;
+}
+
+function formatDnsSignals(dns: DnsSignals): string[] {
+  const lines: string[] = [""];
+  const usage = [
+    `website: ${dns.has_website ? "yes" : "no"}`,
+    `email: ${dns.has_email ? "yes" : "no"}`,
+  ];
+  if (dns.parked) usage.push("parked: yes");
+  lines.push(`  ${usage.join("  |  ")}`);
+  const providers: string[] = [];
+  if (dns.dns_provider) providers.push(`dns: ${dns.dns_provider}`);
+  if (dns.email_provider) providers.push(`email: ${dns.email_provider}`);
+  if (providers.length > 0) lines.push(`  ${providers.join("  |  ")}`);
+  return lines;
 }
 
 function formatTable(results: DomainResult[]): string {
@@ -53,9 +98,51 @@ function formatTable(results: DomainResult[]): string {
     } else if (r.available && r.prices.length === 0) {
       lines.push("  (pricing data not available)");
     }
+
+    if (r.registration) lines.push(...formatRegistration(r.registration));
+    if (r.dns) lines.push(...formatDnsSignals(r.dns));
+    if (r.pricing_notes && r.pricing_notes.length > 0) {
+      lines.push("");
+      for (const note of r.pricing_notes) lines.push(`  note: ${note}`);
+    }
     lines.push("");
   }
 
+  return lines.join("\n");
+}
+
+function formatNameSearch(res: NameSearchResult): string {
+  const lines: string[] = [];
+  lines.push(`"${res.name}" across ${res.results.length} TLDs:`);
+  lines.push("");
+  lines.push("  Domain                Status       Year 1");
+  lines.push("  ─────────────────────────────────────────────");
+  for (const r of res.results) {
+    const status =
+      r.available === true
+        ? "AVAILABLE"
+        : r.available === false
+          ? "taken"
+          : "unknown";
+    const price = r.cheapest
+      ? `$${(r.cheapest.year1_usd_cents / 100).toFixed(2)}`
+      : "-";
+    const tag =
+      res.cheapest_available && r.domain === res.cheapest_available.domain
+        ? " ← cheapest"
+        : "";
+    lines.push(
+      `  ${r.domain.padEnd(20)} ${status.padEnd(11)} ${price}${tag}`
+    );
+  }
+  lines.push("");
+  if (res.available.length === 0) {
+    lines.push("  No available TLDs in this set.");
+  } else if (res.cheapest_available) {
+    const c = res.cheapest_available.cheapest;
+    const priceStr = c ? ` at $${(c.year1_usd_cents / 100).toFixed(2)}` : "";
+    lines.push(`  Cheapest available: ${res.cheapest_available.domain}${priceStr}`);
+  }
   return lines.join("\n");
 }
 
@@ -77,6 +164,11 @@ const checkCmd = defineCommand({
     table: {
       type: "boolean",
       description: "Output human-readable table",
+      default: false,
+    },
+    fast: {
+      type: "boolean",
+      description: "Skip RDAP/DNS intelligence for a faster availability-only check",
       default: false,
     },
   },
@@ -103,7 +195,7 @@ const checkCmd = defineCommand({
       let results: DomainResult[];
 
       if (domains.length === 1) {
-        const result = await checkDomain(domains[0]);
+        const result = await checkDomain(domains[0], { intel: !args.fast });
         output = result;
         results = [result];
       } else {
@@ -134,15 +226,66 @@ const checkCmd = defineCommand({
   },
 });
 
+const findCmd = defineCommand({
+  meta: {
+    description: "Check one name across many TLDs and find the cheapest available",
+  },
+  args: {
+    name: {
+      type: "positional",
+      description: "Bare name without a dot (e.g. mycoolname)",
+      required: true,
+    },
+    tlds: {
+      type: "string",
+      description: "Comma-separated TLDs to search (default: all priced TLDs)",
+    },
+    json: {
+      type: "boolean",
+      description: "Output JSON (default for piped output)",
+      default: false,
+    },
+    table: {
+      type: "boolean",
+      description: "Output human-readable table",
+      default: false,
+    },
+  },
+  async run({ args }) {
+    const name = Array.isArray(args.name) ? args.name[0] : args.name;
+    const tlds = args.tlds
+      ? String(args.tlds)
+          .split(/[,\s]+/)
+          .filter(Boolean)
+      : undefined;
+
+    const useJson = args.json || (!args.table && !process.stdout.isTTY);
+
+    try {
+      const result = await searchName(name, tlds);
+      if (useJson) {
+        console.log(JSON.stringify(result, null, 2));
+      } else {
+        console.log(formatNameSearch(result));
+      }
+      if (result.available.length === 0) process.exit(1);
+    } catch (err) {
+      if (err instanceof Error) console.error(`Error: ${err.message}`);
+      process.exit(2);
+    }
+  },
+});
+
 const main = defineCommand({
   meta: {
-    name: "agent-domain",
+    name: "domainpeek",
     version: "0.1.0",
     description:
-      "Domain availability + cheapest registrar price. Zero config.",
+      "Domain availability, cheapest registrar price, and keyless intelligence. Zero config.",
   },
   subCommands: {
     check: checkCmd,
+    find: findCmd,
   },
 });
 

@@ -58,6 +58,21 @@ describe("checkDomain", () => {
     expect(result.pricing_stale).toBe(true);
   });
 
+  it("adds a renewal-trap pricing note", async () => {
+    const { checkAvailability } = await import("../src/availability/index.js");
+    const { getPricing } = await import("../src/pricing/index.js");
+    vi.mocked(checkAvailability).mockResolvedValue({ available: true, premium: false });
+    vi.mocked(getPricing).mockResolvedValue({
+      prices: [
+        { registrar: "porkbun", year1_usd_cents: 999, renewal_usd_cents: 2500, transfer_usd_cents: 999, url: null, price_updated_at: "" },
+      ],
+      stale: false,
+    });
+
+    const result = await checkDomain("trap.com");
+    expect(result.pricing_notes?.[0]).toMatch(/renewal ~\d+% higher/);
+  });
+
   it("returns empty prices for taken domain", async () => {
     const { checkAvailability } = await import("../src/availability/index.js");
     const { getPricing } = await import("../src/pricing/index.js");

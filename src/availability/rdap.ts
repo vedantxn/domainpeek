@@ -1,6 +1,90 @@
+import type { RegistrationIntel } from "../types.js";
+
 const RDAP_BOOTSTRAP_URL = "https://data.iana.org/rdap/dns.json";
 
 const PREMIUM_STATUS_MARKERS = ["premium", "reserved", "allocated"];
+
+const MS_PER_DAY = 24 * 60 * 60 * 1000;
+
+interface RdapEntity {
+  roles?: string[];
+  vcardArray?: [string, unknown[]];
+  publicIds?: { type?: string; identifier?: string }[];
+}
+
+interface RdapResponse {
+  status?: string[];
+  events?: { eventAction?: string; eventDate?: string }[];
+  entities?: RdapEntity[];
+  nameservers?: { ldhName?: string }[];
+  secureDNS?: { delegationSigned?: boolean };
+}
+
+function eventDate(
+  events: RdapResponse["events"],
+  action: string
+): string | null {
+  const e = events?.find((ev) => ev.eventAction === action);
+  return e?.eventDate ?? null;
+}
+
+function daysFrom(
+  iso: string | null,
+  now: number,
+  dir: "since" | "until"
+): number | null {
+  if (!iso) return null;
+  const ms = Date.parse(iso);
+  if (Number.isNaN(ms)) return null;
+  const diff = dir === "since" ? now - ms : ms - now;
+  return Math.floor(diff / MS_PER_DAY);
+}
+
+function registrarName(entities: RdapEntity[] | undefined): string | null {
+  const reg = entities?.find((e) => e.roles?.includes("registrar"));
+  if (!reg) return null;
+  const fields = reg.vcardArray?.[1];
+  if (Array.isArray(fields)) {
+    for (const f of fields) {
+      if (Array.isArray(f) && f[0] === "fn" && typeof f[3] === "string") {
+        return f[3];
+      }
+    }
+  }
+  const pid = reg.publicIds?.find((p) => /registrar/i.test(p.type ?? ""));
+  return pid?.identifier ?? null;
+}
+
+export function parseRegistration(
+  data: RdapResponse,
+  now: number
+): RegistrationIntel {
+  const statuses = data.status ?? [];
+  const created = eventDate(data.events, "registration");
+  const expires = eventDate(data.events, "expiration");
+  const updated = eventDate(data.events, "last changed");
+  const normalized = statuses.map((s) => s.toLowerCase().replace(/\s+/g, ""));
+  const dropping_soon = normalized.some(
+    (s) => s === "redemptionperiod" || s === "pendingdelete"
+  );
+  return {
+    created_at: created,
+    expires_at: expires,
+    updated_at: updated,
+    age_days: daysFrom(created, now, "since"),
+    expires_in_days: daysFrom(expires, now, "until"),
+    registrar: registrarName(data.entities),
+    statuses,
+    dropping_soon,
+    dnssec:
+      typeof data.secureDNS?.delegationSigned === "boolean"
+        ? data.secureDNS.delegationSigned
+        : null,
+    nameservers: (data.nameservers ?? [])
+      .map((n) => n.ldhName)
+      .filter((n): n is string => typeof n === "string"),
+  };
+}
 
 let bootstrapCache: Record<string, string> | null = null;
 
@@ -64,8 +148,13 @@ export async function fetchRdapWithRetry(
 }
 
 export async function checkRdap(
-  domain: string
-): Promise<{ available: boolean | null; premium: boolean }> {
+  domain: string,
+  now: number = Date.now()
+): Promise<{
+  available: boolean | null;
+  premium: boolean;
+  registration: RegistrationIntel | null;
+}> {
   const tld = extractTld(domain);
 
   let serverUrl: string;
@@ -73,10 +162,10 @@ export async function checkRdap(
     const bootstrap = await getBootstrap();
     serverUrl = bootstrap[tld];
     if (!serverUrl) {
-      return { available: null, premium: false };
+      return { available: null, premium: false, registration: null };
     }
   } catch {
-    return { available: null, premium: false };
+    return { available: null, premium: false, registration: null };
   }
 
   const url = `${serverUrl}/domain/${domain}`;
@@ -89,46 +178,27 @@ export async function checkRdap(
     clearTimeout(timeout);
 
     if (res.status === 404) {
-      return { available: true, premium: false };
+      return { available: true, premium: false, registration: null };
     }
 
     if (!res.ok) {
-      return { available: null, premium: false };
+      return { available: null, premium: false, registration: null };
     }
 
-    const data = (await res.json()) as {
-      status?: string[];
-      events?: { eventAction: string }[];
-    };
+    const data = (await res.json()) as RdapResponse;
 
     const statuses = data.status || [];
     const premium = isPremiumStatus(statuses);
+    const registration = parseRegistration(data, now);
 
-    const isActive = statuses.some(
-      (s) =>
-        s === "active" ||
-        s === "registered" ||
-        s === "server renew prohibited" ||
-        s === "client transfer prohibited"
-    );
-
-    if (isActive) {
-      return { available: false, premium };
-    }
-
-    const isRedemption = statuses.some(
-      (s) => s === "redemption period" || s === "pending delete"
-    );
-    if (isRedemption) {
-      return { available: false, premium };
-    }
-
-    return { available: false, premium };
+    // A non-404 RDAP record means the domain exists (taken), regardless of
+    // which lifecycle status it carries (active, redemption, pending delete).
+    return { available: false, premium, registration };
   } catch (err) {
     if (err instanceof Error && err.name === "AbortError") {
-      return { available: null, premium: false };
+      return { available: null, premium: false, registration: null };
     }
-    return { available: null, premium: false };
+    return { available: null, premium: false, registration: null };
   }
 }
 

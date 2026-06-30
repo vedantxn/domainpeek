@@ -10,7 +10,7 @@ const CACHE_TTL_MS = 60 * 60 * 1000; // 1 hour
 function getCacheDir(): string {
   const xdg = process.env.XDG_CACHE_HOME;
   const base = xdg || join(homedir(), ".cache");
-  return join(base, "agent-domain");
+  return join(base, "domainpeek");
 }
 
 function getCachePath(): string {

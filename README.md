@@ -1,9 +1,9 @@
-# agent-domain
+# domainpeek
 
 Domain availability + cheapest registrar price for AI agents. Zero config.
 
 ```bash
-npx agent-domain check example.com
+npx domainpeek check example.com
 ```
 
 ```json
@@ -16,7 +16,7 @@ npx agent-domain check example.com
 ```
 
 ```bash
-npx agent-domain check mycoolstartup.dev
+npx domainpeek check mycoolstartup.dev
 ```
 
 ```json
@@ -40,7 +40,7 @@ Every agent that helps users buy domains does the same dance: check WHOIS, then 
 
 ## Comparison
 
-| Feature | agent-domain | tldx | domain-check |
+| Feature | domainpeek | tldx | domain-check |
 |---------|:---:|:---:|:---:|
 | Availability check | Yes | Yes | Yes |
 | Price comparison | **Yes** | No | No |
@@ -52,29 +52,29 @@ Every agent that helps users buy domains does the same dance: check WHOIS, then 
 
 ```bash
 # Use directly (no install)
-npx agent-domain check example.com
+npx domainpeek check example.com
 
 # Install globally
-npm install -g agent-domain
+npm install -g domainpeek
 
 # Use as library
-npm install agent-domain
+npm install domainpeek
 ```
 
 ## CLI Usage
 
 ```bash
 # Check a single domain
-agent-domain check startup.ai
+domainpeek check startup.ai
 
 # Check multiple domains
-agent-domain check startup.ai,startup.io,startup.dev
+domainpeek check startup.ai,startup.io,startup.dev
 
 # Force JSON output
-agent-domain check startup.ai --json
+domainpeek check startup.ai --json
 
 # Human-readable table
-agent-domain check startup.ai --table
+domainpeek check startup.ai --table
 ```
 
 ### Exit codes
@@ -86,7 +86,7 @@ agent-domain check startup.ai --table
 ## Library Usage
 
 ```typescript
-import { checkDomain, checkDomains, getPricing } from "agent-domain";
+import { checkDomain, checkDomains, getPricing } from "domainpeek";
 
 // Check a single domain
 const result = await checkDomain("mycoolapp.dev");
@@ -108,9 +108,9 @@ Add to your Claude Code or Cursor config:
 ```json
 {
   "mcpServers": {
-    "agent-domain": {
+    "domainpeek": {
       "command": "npx",
-      "args": ["-y", "agent-domain", "--mcp"]
+      "args": ["-y", "domainpeek", "--mcp"]
     }
   }
 }

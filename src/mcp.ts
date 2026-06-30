@@ -3,20 +3,20 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { z } from "zod";
-import { checkDomain, checkDomains, getPricing } from "./index.js";
+import { checkDomain, checkDomains, getPricing, searchName } from "./index.js";
 
 const server = new McpServer({
-  name: "agent-domain",
+  name: "domainpeek",
   version: "0.1.0",
 });
 
 server.tool(
   "check_domain",
-  "Check if a domain is available and get pricing from cheapest registrar",
+  "Check if a domain is available, get cheapest-registrar pricing, plus intelligence: registration age/expiry, registrar, 'dropping soon' status, DNSSEC, nameservers, and whether it has a live website/email",
   { domain: z.string().describe("Domain name to check (e.g. example.com)") },
   async ({ domain }) => {
     try {
-      const result = await checkDomain(domain);
+      const result = await checkDomain(domain, { intel: true });
       return {
         content: [{ type: "text", text: JSON.stringify(result, null, 2) }],
       };
@@ -69,6 +69,34 @@ server.tool(
             text: JSON.stringify({ prices, stale }, null, 2),
           },
         ],
+      };
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Unknown error";
+      return {
+        content: [{ type: "text", text: JSON.stringify({ error: msg }) }],
+        isError: true,
+      };
+    }
+  }
+);
+
+server.tool(
+  "search_name",
+  "Check one bare name across many TLDs and return which are available plus the cheapest available option",
+  {
+    name: z
+      .string()
+      .describe("Bare name without a dot (e.g. mycoolname)"),
+    tlds: z
+      .array(z.string())
+      .optional()
+      .describe("TLDs to search without dots (default: all priced TLDs)"),
+  },
+  async ({ name, tlds }) => {
+    try {
+      const result = await searchName(name, tlds);
+      return {
+        content: [{ type: "text", text: JSON.stringify(result, null, 2) }],
       };
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Unknown error";

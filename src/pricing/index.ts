@@ -17,4 +17,11 @@ export async function getPricing(
   return { prices, stale };
 }
 
+/** TLDs we have pricing for; used as the default set for multi-TLD search. */
+export async function getPricedTlds(): Promise<string[]> {
+  const { data } = await getPricingData();
+  if (!data) return [];
+  return Object.keys(data.tlds).sort();
+}
+
 export { getPricingData } from "./cache.js";

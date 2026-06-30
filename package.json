@@ -1,12 +1,12 @@
 {
-  "name": "agent-domain",
+  "name": "domainpeek",
   "version": "0.1.0",
-  "description": "Domain availability + cheapest registrar price for AI agents. Zero config.",
+  "description": "Domain availability, cheapest registrar price, and keyless domain intelligence for AI agents. Zero config.",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "bin": {
-    "agent-domain": "./dist/cli.js"
+    "domainpeek": "./dist/cli.js"
   },
   "exports": {
     ".": {
