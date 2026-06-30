@@ -1,1 +1,150 @@
 # agent-domain
+
+Domain availability + cheapest registrar price for AI agents. Zero config.
+
+```bash
+npx agent-domain check example.com
+```
+
+```json
+{
+  "domain": "example.com",
+  "available": false,
+  "prices": [],
+  "cheapest": null
+}
+```
+
+```bash
+npx agent-domain check mycoolstartup.dev
+```
+
+```json
+{
+  "domain": "mycoolstartup.dev",
+  "available": true,
+  "prices": [
+    { "registrar": "porkbun", "year1_usd_cents": 999, "renewal_usd_cents": 1625 },
+    { "registrar": "cloudflare", "year1_usd_cents": 1100, "renewal_usd_cents": 1100 },
+    { "registrar": "spaceship", "year1_usd_cents": 1099, "renewal_usd_cents": 1599 }
+  ],
+  "cheapest": { "registrar": "porkbun", "year1_usd_cents": 999 }
+}
+```
+
+## Why
+
+Every agent that helps users buy domains does the same dance: check WHOIS, then manually compare Namecheap vs Cloudflare vs Porkbun. This tool does it in one call.
+
+- **Zero config** -- no API keys, no accounts, no setup
+- **Agent-native** -- JSON output by default, MCP server included
+- **Cross-registrar pricing** -- the only tool that compares prices
+
+## Comparison
+
+| Feature | agent-domain | tldx | domain-check |
+|---------|:---:|:---:|:---:|
+| Availability check | Yes | Yes | Yes |
+| Price comparison | **Yes** | No | No |
+| MCP server | Yes | Yes | No |
+| Zero config | **Yes** | Yes | Yes |
+| Cheapest registrar | **Yes** | No | No |
+
+## Install
+
+```bash
+# Use directly (no install)
+npx agent-domain check example.com
+
+# Install globally
+npm install -g agent-domain
+
+# Use as library
+npm install agent-domain
+```
+
+## CLI Usage
+
+```bash
+# Check a single domain
+agent-domain check startup.ai
+
+# Check multiple domains
+agent-domain check startup.ai,startup.io,startup.dev
+
+# Force JSON output
+agent-domain check startup.ai --json
+
+# Human-readable table
+agent-domain check startup.ai --table
+```
+
+### Exit codes
+
+- `0` -- all domains resolved successfully
+- `1` -- partial failure (some domains failed)
+- `2` -- total failure or invalid input
+
+## Library Usage
+
+```typescript
+import { checkDomain, checkDomains, getPricing } from "agent-domain";
+
+// Check a single domain
+const result = await checkDomain("mycoolapp.dev");
+console.log(result.available); // true
+console.log(result.cheapest);  // { registrar: "porkbun", year1_usd_cents: 999, ... }
+
+// Batch check (max 10)
+const results = await checkDomains(["app1.com", "app2.io", "app3.dev"]);
+
+// Get pricing for a TLD
+const prices = await getPricing("com");
+// [{ registrar: "spaceship", year1_usd_cents: 899, ... }, ...]
+```
+
+## MCP Server
+
+Add to your Claude Code or Cursor config:
+
+```json
+{
+  "mcpServers": {
+    "agent-domain": {
+      "command": "npx",
+      "args": ["-y", "agent-domain", "--mcp"]
+    }
+  }
+}
+```
+
+Tools available:
+- `check_domain` -- check availability and pricing for one domain
+- `check_domains` -- batch check up to 10 domains
+- `get_pricing` -- get registrar pricing for a TLD
+
+## How it works
+
+1. **Pricing data** is scraped daily from registrar APIs (Porkbun, Cloudflare, Namecheap, GoDaddy, Spaceship) by the maintainer's CI and published as a static JSON file. Your CLI fetches this file and caches it locally for 1 hour. No API keys needed.
+
+2. **Availability** is checked live via RDAP (the modern replacement for WHOIS). Free, standardized, no authentication required.
+
+3. **DNS pre-check** is used as a speed optimization -- if NS records exist, the domain is almost certainly taken, so we skip the slower RDAP call.
+
+## Pricing coverage
+
+Currently tracking pricing for 8+ TLDs across 5 registrars:
+
+| Registrar | Coverage |
+|-----------|----------|
+| Porkbun | All TLDs they sell |
+| Cloudflare | At-cost pricing |
+| Namecheap | Major TLDs |
+| GoDaddy | Major TLDs |
+| Spaceship | Major TLDs |
+
+Pricing updates daily. Data may be up to 24 hours stale.
+
+## License
+
+MIT
