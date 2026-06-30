@@ -2,7 +2,7 @@
 
 import { defineCommand, runMain } from "citty";
 import { checkDomain, checkDomains } from "./index.js";
-import type { DomainResult } from "./types.js";
+import type { BatchCheckResult, DomainResult } from "./types.js";
 
 if (process.argv.includes("--mcp")) {
   await import("./mcp.js");
@@ -82,15 +82,22 @@ const checkCmd = defineCommand({
     const useJson = args.json || (!args.table && !process.stdout.isTTY);
 
     try {
-      const results =
-        domains.length === 1
-          ? [await checkDomain(domains[0])]
-          : await checkDomains(domains);
+      let output: DomainResult | BatchCheckResult;
+      let results: DomainResult[];
+
+      if (domains.length === 1) {
+        const result = await checkDomain(domains[0]);
+        output = result;
+        results = [result];
+      } else {
+        const batch = await checkDomains(domains);
+        output = batch;
+        results = batch.results;
+      }
 
       const hasFailures = results.some((r) => r.available === null);
 
       if (useJson) {
-        const output = domains.length === 1 ? results[0] : results;
         console.log(JSON.stringify(output, null, 2));
       } else {
         console.log(formatTable(results));

@@ -6,6 +6,12 @@ export interface DomainResult {
   prices: RegistrarPrice[];
   cheapest: RegistrarPrice | null;
   tld_pricing: true;
+  pricing_stale?: boolean;
+}
+
+export interface BatchCheckResult {
+  results: DomainResult[];
+  errors?: { domain: string; reason: string }[];
 }
 
 export interface RegistrarPrice {

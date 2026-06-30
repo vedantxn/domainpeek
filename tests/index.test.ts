@@ -19,9 +19,12 @@ describe("checkDomain", () => {
     const { getPricing } = await import("../src/pricing/index.js");
 
     vi.mocked(checkAvailability).mockResolvedValue({ available: true, premium: false });
-    vi.mocked(getPricing).mockResolvedValue([
-      { registrar: "porkbun", year1_usd_cents: 1025, renewal_usd_cents: 1125, transfer_usd_cents: 1025, url: "https://porkbun.com", price_updated_at: "2026-06-30T00:00:00Z" },
-    ]);
+    vi.mocked(getPricing).mockResolvedValue({
+      prices: [
+        { registrar: "porkbun", year1_usd_cents: 1025, renewal_usd_cents: 1125, transfer_usd_cents: 1025, url: "https://porkbun.com", price_updated_at: "2026-06-30T00:00:00Z" },
+      ],
+      stale: false,
+    });
 
     const result = await checkDomain("available-test.com");
 
@@ -59,7 +62,7 @@ describe("checkDomain", () => {
     const { checkAvailability } = await import("../src/availability/index.js");
     const { getPricing } = await import("../src/pricing/index.js");
     vi.mocked(checkAvailability).mockResolvedValue({ available: null, premium: false });
-    vi.mocked(getPricing).mockResolvedValue([]);
+    vi.mocked(getPricing).mockResolvedValue({ prices: [], stale: false });
 
     const result = await checkDomain("test.xn--zckzah");
     expect(result.domain).toBe("test.xn--zckzah");
@@ -69,7 +72,7 @@ describe("checkDomain", () => {
     const { checkAvailability } = await import("../src/availability/index.js");
     const { getPricing } = await import("../src/pricing/index.js");
     vi.mocked(checkAvailability).mockResolvedValue({ available: null, premium: false });
-    vi.mocked(getPricing).mockResolvedValue([]);
+    vi.mocked(getPricing).mockResolvedValue({ prices: [], stale: false });
 
     const result = await checkDomain("EXAMPLE.COM");
     expect(result.domain).toBe("example.com");
@@ -93,12 +96,15 @@ describe("checkDomains", () => {
       .mockRejectedValueOnce(new Error("network error"));
 
     const { getPricing } = await import("../src/pricing/index.js");
-    vi.mocked(getPricing).mockResolvedValue([]);
+    vi.mocked(getPricing).mockResolvedValue({ prices: [], stale: false });
 
-    const results = await checkDomains(["good.com", "bad.com"]);
+    const batch = await checkDomains(["good.com", "bad.com"]);
 
-    expect(results).toHaveLength(2);
-    expect(results[0].available).toBe(true);
-    expect(results[1].available).toBeNull();
+    expect(batch.results).toHaveLength(2);
+    expect(batch.results[0].available).toBe(true);
+    expect(batch.results[1].available).toBeNull();
+    expect(batch.errors).toEqual([
+      { domain: "bad.com", reason: "network error" },
+    ]);
   });
 });

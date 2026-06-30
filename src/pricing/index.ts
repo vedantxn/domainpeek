@@ -1,17 +1,20 @@
 import type { RegistrarPrice } from "../types.js";
 import { getPricingData } from "./cache.js";
 
-export async function getPricing(tld: string): Promise<RegistrarPrice[]> {
-  const { data } = await getPricingData();
-  if (!data) return [];
+export async function getPricing(
+  tld: string
+): Promise<{ prices: RegistrarPrice[]; stale: boolean }> {
+  const { data, stale } = await getPricingData();
+  if (!data) return { prices: [], stale: false };
 
   const normalized = tld.replace(/^\./, "").toLowerCase();
   const tldData = data.tlds[normalized];
-  if (!tldData) return [];
+  if (!tldData) return { prices: [], stale };
 
-  return [...tldData.prices].sort(
+  const prices = [...tldData.prices].sort(
     (a, b) => a.year1_usd_cents - b.year1_usd_cents
   );
+  return { prices, stale };
 }
 
 export { getPricingData } from "./cache.js";

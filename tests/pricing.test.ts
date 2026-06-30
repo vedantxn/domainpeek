@@ -29,11 +29,12 @@ describe("getPricing", () => {
       stale: false,
     });
 
-    const prices = await getPricing("com");
+    const { prices, stale } = await getPricing("com");
     expect(prices).toHaveLength(2);
     expect(prices[0].registrar).toBe("cloudflare");
     expect(prices[0].year1_usd_cents).toBe(1018);
     expect(prices[1].registrar).toBe("porkbun");
+    expect(stale).toBe(false);
   });
 
   it("returns empty array for unknown TLD", async () => {
@@ -43,7 +44,7 @@ describe("getPricing", () => {
       stale: false,
     });
 
-    const prices = await getPricing("unknowntld");
+    const { prices } = await getPricing("unknowntld");
     expect(prices).toEqual([]);
   });
 
@@ -51,8 +52,31 @@ describe("getPricing", () => {
     const { getPricingData } = await import("../src/pricing/cache.js");
     vi.mocked(getPricingData).mockResolvedValue({ data: null, stale: false });
 
-    const prices = await getPricing("com");
+    const { prices } = await getPricing("com");
     expect(prices).toEqual([]);
+  });
+
+  it("propagates stale flag from cache", async () => {
+    const { getPricingData } = await import("../src/pricing/cache.js");
+    vi.mocked(getPricingData).mockResolvedValue({
+      data: {
+        version: 1,
+        updated_at: "",
+        registrars: ["test"],
+        tlds: {
+          io: {
+            prices: [
+              { registrar: "test", year1_usd_cents: 3000, renewal_usd_cents: 5000, transfer_usd_cents: 3000, url: null, price_updated_at: "" },
+            ],
+          },
+        },
+      },
+      stale: true,
+    });
+
+    const { prices, stale } = await getPricing("io");
+    expect(prices).toHaveLength(1);
+    expect(stale).toBe(true);
   });
 
   it("handles TLD with leading dot", async () => {
@@ -73,7 +97,7 @@ describe("getPricing", () => {
       stale: false,
     });
 
-    const prices = await getPricing(".io");
+    const { prices } = await getPricing(".io");
     expect(prices).toHaveLength(1);
     expect(prices[0].registrar).toBe("test");
   });

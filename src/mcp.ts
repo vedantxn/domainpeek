@@ -61,9 +61,14 @@ server.tool(
   { tld: z.string().describe("Top-level domain without dot (e.g. com, io, ai)") },
   async ({ tld }) => {
     try {
-      const prices = await getPricing(tld);
+      const { prices, stale } = await getPricing(tld);
       return {
-        content: [{ type: "text", text: JSON.stringify(prices, null, 2) }],
+        content: [
+          {
+            type: "text",
+            text: JSON.stringify({ prices, stale }, null, 2),
+          },
+        ],
       };
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Unknown error";
