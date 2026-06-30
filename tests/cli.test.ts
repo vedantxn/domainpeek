@@ -46,7 +46,7 @@ describe("CLI", () => {
   });
 
   it("returns JSON for a valid domain via check subcommand", () => {
-    const result = runCli(["check", "example.com", "--json"]);
+    const result = runCli(["check", "example.com", "--json", "--fast"]);
     expect(result.status).toBe(0);
     const parsed = JSON.parse(result.stdout);
     expect(parsed.domain).toBe("example.com");

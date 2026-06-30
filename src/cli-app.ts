@@ -1,7 +1,8 @@
 import { defineCommand, runMain } from "citty";
-import { checkDomain, checkDomains, searchName } from "./index.js";
+import { checkDomain, checkDomains, searchName, defensiveScan } from "./index.js";
 import type {
   BatchCheckResult,
+  DefensiveScanResult,
   DnsSignals,
   DomainResult,
   NameSearchResult,
@@ -36,6 +37,11 @@ function formatRegistration(reg: RegistrationIntel): string[] {
   if (reg.expires_in_days !== null) {
     lines.push(`  expires: in ${reg.expires_in_days} days`);
   }
+  const nearDrop =
+    reg.dropping_soon || (reg.expires_in_days !== null && reg.expires_in_days < 0);
+  if (nearDrop && reg.estimated_drop_at) {
+    lines.push(`  est. drop: ~${reg.estimated_drop_at.slice(0, 10)}`);
+  }
   if (reg.dnssec !== null) lines.push(`  dnssec: ${reg.dnssec ? "yes" : "no"}`);
   if (reg.nameservers.length > 0) {
     lines.push(
@@ -57,6 +63,36 @@ function formatDnsSignals(dns: DnsSignals): string[] {
   if (dns.dns_provider) providers.push(`dns: ${dns.dns_provider}`);
   if (dns.email_provider) providers.push(`email: ${dns.email_provider}`);
   if (providers.length > 0) lines.push(`  ${providers.join("  |  ")}`);
+  return lines;
+}
+
+function formatExtraIntel(r: DomainResult): string[] {
+  const lines: string[] = [];
+  if (r.email_security) {
+    const e = r.email_security;
+    const dmarc = e.dmarc ? (e.dmarc_policy ?? "yes") : "no";
+    lines.push("", `  email security: spf ${e.spf ? "yes" : "no"}  |  dmarc ${dmarc}`);
+  }
+  if (r.for_sale?.listed) {
+    const where = r.for_sale.marketplace ? ` (${r.for_sale.marketplace})` : "";
+    lines.push("", `  listed for sale${where}`);
+  }
+  if (r.tls) {
+    const t = r.tls;
+    const exp =
+      t.days_to_expiry !== null ? `, cert expires in ${t.days_to_expiry}d` : "";
+    const sans = t.san_count ? `, ${t.san_count} SANs` : "";
+    lines.push("", `  TLS: ${t.issuer ?? "unknown issuer"}${exp}${sans}`);
+  }
+  if (r.web_history) {
+    lines.push(
+      "",
+      `  web history: first seen ${r.web_history.first_seen ?? "?"} (${r.web_history.snapshot_count} snapshots)`
+    );
+  }
+  if (r.cert_history) {
+    lines.push(`  subdomains seen (crt.sh): ${r.cert_history.subdomains_seen}`);
+  }
   return lines;
 }
 
@@ -101,6 +137,7 @@ function formatTable(results: DomainResult[]): string {
 
     if (r.registration) lines.push(...formatRegistration(r.registration));
     if (r.dns) lines.push(...formatDnsSignals(r.dns));
+    lines.push(...formatExtraIntel(r));
     if (r.pricing_notes && r.pricing_notes.length > 0) {
       lines.push("");
       for (const note of r.pricing_notes) lines.push(`  note: ${note}`);
@@ -143,6 +180,36 @@ function formatNameSearch(res: NameSearchResult): string {
     const priceStr = c ? ` at $${(c.year1_usd_cents / 100).toFixed(2)}` : "";
     lines.push(`  Cheapest available: ${res.cheapest_available.domain}${priceStr}`);
   }
+
+  if (res.brand) {
+    const fmt = (v: boolean | null) => (v === null ? "?" : v ? "free" : "taken");
+    lines.push("", `  brand: npm ${fmt(res.brand.npm)}  |  github ${fmt(res.brand.github)}`);
+  }
+  if (res.brandability) {
+    const b = res.brandability;
+    const flags = [
+      `${b.syllables} syl`,
+      b.pronounceable ? "pronounceable" : "hard to say",
+    ];
+    if (b.has_hyphen) flags.push("hyphen");
+    if (b.has_digits) flags.push("digits");
+    lines.push(`  brandability: ${b.score}/100 (${flags.join(", ")})`);
+  }
+  return lines.join("\n");
+}
+
+function formatDefensive(res: DefensiveScanResult): string {
+  const lines: string[] = [];
+  lines.push(`Defensive scan for "${res.name}" (${res.variants.length} variants):`, "");
+  lines.push("  Variant                       Registered");
+  lines.push("  ──────────────────────────────────────────");
+  for (const v of res.variants) {
+    const reg =
+      v.registered === true ? "taken" : v.registered === false ? "free" : "?";
+    lines.push(`  ${v.variant.padEnd(29)} ${reg}`);
+  }
+  const taken = res.variants.filter((v) => v.registered === true).length;
+  lines.push("", `  ${taken} of ${res.variants.length} variants already registered.`);
   return lines.join("\n");
 }
 
@@ -171,6 +238,11 @@ const checkCmd = defineCommand({
       description: "Skip RDAP/DNS intelligence for a faster availability-only check",
       default: false,
     },
+    deep: {
+      type: "boolean",
+      description: "Add slower intel: TLS cert, Wayback history, crt.sh subdomains",
+      default: false,
+    },
   },
   async run({ args }) {
     const rawDomains = Array.isArray(args.domains)
@@ -195,7 +267,10 @@ const checkCmd = defineCommand({
       let results: DomainResult[];
 
       if (domains.length === 1) {
-        const result = await checkDomain(domains[0], { intel: !args.fast });
+        const result = await checkDomain(domains[0], {
+          intel: !args.fast,
+          deep: args.deep,
+        });
         output = result;
         results = [result];
       } else {
@@ -276,6 +351,54 @@ const findCmd = defineCommand({
   },
 });
 
+const guardCmd = defineCommand({
+  meta: {
+    description: "Scan typo and other-TLD variants of a name for defensive registration",
+  },
+  args: {
+    name: {
+      type: "positional",
+      description: "Bare name without a dot (e.g. mybrand)",
+      required: true,
+    },
+    tlds: {
+      type: "string",
+      description: "Comma-separated TLDs for the exact-name variants (default: priced TLDs)",
+    },
+    json: {
+      type: "boolean",
+      description: "Output JSON (default for piped output)",
+      default: false,
+    },
+    table: {
+      type: "boolean",
+      description: "Output human-readable table",
+      default: false,
+    },
+  },
+  async run({ args }) {
+    const name = Array.isArray(args.name) ? args.name[0] : args.name;
+    const tlds = args.tlds
+      ? String(args.tlds)
+          .split(/[,\s]+/)
+          .filter(Boolean)
+      : undefined;
+    const useJson = args.json || (!args.table && !process.stdout.isTTY);
+
+    try {
+      const result = await defensiveScan(name, tlds);
+      if (useJson) {
+        console.log(JSON.stringify(result, null, 2));
+      } else {
+        console.log(formatDefensive(result));
+      }
+    } catch (err) {
+      if (err instanceof Error) console.error(`Error: ${err.message}`);
+      process.exit(2);
+    }
+  },
+});
+
 const main = defineCommand({
   meta: {
     name: "domainpeek",
@@ -286,6 +409,7 @@ const main = defineCommand({
   subCommands: {
     check: checkCmd,
     find: findCmd,
+    guard: guardCmd,
   },
 });
 

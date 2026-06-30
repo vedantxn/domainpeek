@@ -7,6 +7,10 @@ vi.mock("../src/pricing/index.js", () => ({
   getPricing: vi.fn(),
   getPricedTlds: vi.fn(),
 }));
+// Avoid real npm/GitHub network calls during searchName.
+vi.mock("../src/intel/brand.js", () => ({
+  brandAvailability: vi.fn(async () => ({ npm: null, github: null })),
+}));
 
 import { searchName } from "../src/index.js";
 import { checkAvailability } from "../src/availability/index.js";
