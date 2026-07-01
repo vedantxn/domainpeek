@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>domainpeek — docs</title>
+<style>
+  html, body { margin: 0; }
+  body {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    background: #fff;
+    color: #000;
+    line-height: 1.5;
+  }
+  main { padding: 24px; max-width: 640px; margin: 0 auto; }
+  h1 { font-size: 20px; font-weight: 700; margin: 0 0 6px; }
+  h2 { font-size: 14px; font-weight: 700; margin: 24px 0 8px; }
+  p { margin: 0 0 12px; }
+  ul { margin: 0 0 12px; padding-left: 20px; }
+  li { margin-bottom: 4px; }
+  pre {
+    margin: 0 0 8px;
+    padding: 10px 12px;
+    border: 1px solid #000;
+    overflow-x: auto;
+    white-space: pre;
+  }
+  .cmds pre { margin-bottom: 6px; }
+  nav { margin: 24px 0 0; }
+  a { color: inherit; }
+  code { font-size: inherit; }
+</style>
+</head>
+<body>
+<main>
+  <h1>domainpeek</h1>
+  <p>Keyless domain intelligence from the command line and for AI agents.
+     No API keys, no config.</p>
+
+  <h2>Quick start</h2>
+  <div class="cmds">
+    <pre>npx domainpeek check stripe.com</pre>
+    <p>Availability, price, register link, and RDAP/DNS intel for one domain.</p>
+    <pre>npx domainpeek find lumind</pre>
+    <p>Check a name across every priced TLD; cheapest available flagged, plus npm/GitHub brand check.</p>
+    <pre>npx domainpeek guard stripe</pre>
+    <p>See which typo and other-TLD variants are already registered.</p>
+  </div>
+
+  <h2>Commands</h2>
+
+  <p><strong>check</strong> — availability, registrar pricing, <code>checkout_url</code>, and registration/DNS intel.</p>
+  <pre>domainpeek check startup.ai
+domainpeek check startup.ai,startup.io,startup.dev   # batch, max 10
+domainpeek check startup.ai --table                  # human-readable
+domainpeek check startup.ai --fast                   # availability only
+domainpeek check startup.ai --deep                   # + TLS, Wayback, crt.sh</pre>
+
+  <p><strong>find</strong> — one bare name across priced TLDs.</p>
+  <pre>domainpeek find startup
+domainpeek find startup --tlds com,io,dev,ai</pre>
+
+  <p><strong>guard</strong> — defensive scan for typo and other-TLD variants.</p>
+  <pre>domainpeek guard startup
+domainpeek guard startup --tlds com,io,dev</pre>
+
+  <h2>Output</h2>
+  <ul>
+    <li>JSON by default when output is piped</li>
+    <li><code>--table</code> for human-readable output in a terminal</li>
+    <li>Exit codes: <code>0</code> all resolved, <code>1</code> partial failure, <code>2</code> total failure</li>
+  </ul>
+
+  <h2>MCP server</h2>
+  <p>Add to Claude Code / Cursor:</p>
+  <pre>{
+  "mcpServers": {
+    "domainpeek": { "command": "npx", "args": ["-y", "domainpeek", "--mcp"] }
+  }
+}</pre>
+  <p>Tools: <code>check_domain</code>, <code>check_domains</code>, <code>get_pricing</code>, <code>search_name</code>, <code>brand_check</code>, <code>guard_name</code>.</p>
+
+  <h2>For agents</h2>
+  <p>Fetch the skill file for structured agent instructions:</p>
+  <pre>https://vedantxn.github.io/domainpeek/docs/skill.md</pre>
+  <p><a href="skill.md">skill.md</a></p>
+
+  <nav>
+    <a href="../">Home</a>
+    &nbsp;&middot;&nbsp;
+    <a href="skill.md">skill.md</a>
+    &nbsp;&middot;&nbsp;
+    <a href="https://github.com/vedantxn/domainpeek">GitHub</a>
+  </nav>
+</main>
+</body>
+</html>
