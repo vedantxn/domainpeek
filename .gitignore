@@ -6,3 +6,6 @@ dist/
 # Local secrets — never commit. CI reads from GitHub Actions secrets, not this file.
 .env
 .env.local
+
+# Launch draft — keep local, not part of the repo.
+HN_LAUNCH.md
