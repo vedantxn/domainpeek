@@ -1,144 +1,160 @@
 # domainpeek
 
-Domain availability + cheapest registrar price for AI agents. Zero config.
+**The zero-config domain intelligence CLI for humans and AI agents.** Check availability, find the cheapest registrar with a one-click register link, and pull deep intelligence on any domain — with no API keys, no accounts, no setup.
 
 ```bash
-npx domainpeek check example.com
+npx domainpeek check stripe.com
 ```
 
-```json
-{
-  "domain": "example.com",
-  "available": false,
-  "prices": [],
-  "cheapest": null
-}
-```
+Most tools stop at "is it available?" domainpeek tells you availability, price, age, expiry, who owns it, whether it's for sale, its email/DNS setup, and more — all keyless, all in one JSON call an agent can act on.
+
+## Quick start
 
 ```bash
+# Is it available? What's it cost? Where do I buy it?
 npx domainpeek check mycoolstartup.dev
+
+# Find a name across every TLD and get the cheapest available one
+npx domainpeek find mycoolstartup
+
+# Is my brand's typo/other-TLD space already grabbed?
+npx domainpeek guard mycoolstartup
 ```
 
-```json
-{
-  "domain": "mycoolstartup.dev",
-  "available": true,
-  "prices": [
-    { "registrar": "porkbun", "year1_usd_cents": 999, "renewal_usd_cents": 1625 }
-  ],
-  "cheapest": { "registrar": "porkbun", "year1_usd_cents": 999 }
-}
+## What you get
+
+- **Availability** — live via RDAP (modern WHOIS), with a DNS fast-path.
+- **Cheapest price + a register link** — available domains come with a direct `checkout_url` to buy them.
+- **Domain intelligence** — age, creation/expiry dates, "dropping soon" + estimated drop date, registrar, DNSSEC, nameservers, live website/email, DNS + email provider, SPF/DMARC posture, TLS cert, for-sale detection, and (best-effort) Wayback history + crt.sh subdomains.
+- **`find` across TLDs** — availability + price for one name on every TLD, cheapest flagged, plus **brand availability** (npm package + GitHub handle) and a **brandability score**.
+- **`guard` defensive scan** — which typos and other-TLD variants of your brand are already registered.
+- **Agent-native** — JSON by default, plus a 6-tool MCP server.
+- **Zero config, keyless** — `npx domainpeek` just works. No keys, ever.
+
+## Example
+
+```bash
+npx domainpeek check stripe.com --table
 ```
 
-## Why
+```
+stripe.com  ✗ TAKEN
 
-Every agent that helps users buy domains does the same dance: check WHOIS, then manually compare Namecheap vs Cloudflare vs Porkbun. This tool does it in one call.
+  registrar: SafeNames Ltd.
+  age: 30.8 years
+  expires: in 437 days
+  dnssec: no
+  nameservers: ns-1087.awsdns-07.org, ...
 
-- **Zero config** -- no API keys, no accounts, no setup
-- **Agent-native** -- JSON output by default, MCP server included
-- **Cross-registrar pricing** -- the only tool that compares prices
+  website: yes  |  email: yes
+  dns: AWS Route 53  |  email: Google Workspace
+  email security: spf yes  |  dmarc reject
+```
+
+```bash
+npx domainpeek find lumind --table
+```
+
+```
+"lumind" across 8 TLDs:
+  lumind.dev            AVAILABLE   $9.99 ← cheapest
+  ...
+  Cheapest available: lumind.dev at $9.99
+  → register: https://porkbun.com/checkout/search?q=lumind.dev
+
+  brand: npm free  |  github taken
+  brandability: 100/100 (2 syl, pronounceable)
+```
 
 ## Comparison
 
-| Feature | domainpeek | tldx | domain-check |
-|---------|:---:|:---:|:---:|
-| Availability check | Yes | Yes | Yes |
-| Price comparison | **Yes** | No | No |
-| MCP server | Yes | Yes | No |
-| Zero config | **Yes** | Yes | Yes |
-| Cheapest registrar | **Yes** | No | No |
+| | domainpeek | tldx | domain-check |
+|---|:---:|:---:|:---:|
+| Availability | ✅ | ✅ | ✅ |
+| Cheapest price + register link | ✅ | ❌ | ❌ |
+| Registration intel (age/expiry/registrar) | ✅ | ❌ | ❌ |
+| DNS / email / TLS / SPF-DMARC intel | ✅ | ❌ | ❌ |
+| Brand check (npm + GitHub) | ✅ | ❌ | ❌ |
+| Typosquat / defensive scan | ✅ | partial | ❌ |
+| MCP server | ✅ | ✅ | ❌ |
+| Zero config, keyless | ✅ | ✅ | ✅ |
 
 ## Install
 
 ```bash
-# Use directly (no install)
-npx domainpeek check example.com
-
-# Install globally
-npm install -g domainpeek
-
-# Use as library
-npm install domainpeek
+npx domainpeek check example.com   # no install
+npm install -g domainpeek          # global CLI
+npm install domainpeek             # as a library
 ```
 
-## CLI Usage
+## CLI
 
 ```bash
-# Check a single domain
+# check: availability + price + register link + intelligence
 domainpeek check startup.ai
+domainpeek check startup.ai,startup.io,startup.dev   # batch (max 10)
+domainpeek check startup.ai --table                  # human-readable
+domainpeek check startup.ai --fast                   # availability only, skip intel
+domainpeek check startup.ai --deep                   # + TLS cert, Wayback, crt.sh
 
-# Check multiple domains
-domainpeek check startup.ai,startup.io,startup.dev
+# find: one name across every TLD, cheapest flagged, + brand availability
+domainpeek find startup
+domainpeek find startup --tlds com,io,dev,ai
 
-# Force JSON output
-domainpeek check startup.ai --json
-
-# Human-readable table
-domainpeek check startup.ai --table
+# guard: which typo/other-TLD variants are already registered
+domainpeek guard startup
 ```
 
-### Exit codes
+JSON is the default when output is piped; add `--table` for a human view. Exit codes: `0` all resolved, `1` partial failure, `2` total failure / invalid input.
 
-- `0` -- all domains resolved successfully
-- `1` -- partial failure (some domains failed)
-- `2` -- total failure or invalid input
-
-## Library Usage
+## Library
 
 ```typescript
-import { checkDomain, checkDomains, getPricing } from "domainpeek";
+import {
+  checkDomain,   // availability + price + intel for one domain
+  checkDomains,  // batch, max 10
+  searchName,    // one name across TLDs + brand + brandability
+  brandCheck,    // npm + GitHub availability + brandability score
+  defensiveScan, // typo / other-TLD registration scan
+  getPricing,    // registrar pricing for a TLD
+} from "domainpeek";
 
-// Check a single domain
-const result = await checkDomain("mycoolapp.dev");
-console.log(result.available); // true
-console.log(result.cheapest);  // { registrar: "porkbun", year1_usd_cents: 999, ... }
-
-// Batch check (max 10)
-const results = await checkDomains(["app1.com", "app2.io", "app3.dev"]);
-
-// Get pricing for a TLD
-const prices = await getPricing("com");
-// [{ registrar: "spaceship", year1_usd_cents: 899, ... }, ...]
+const r = await checkDomain("mycoolapp.dev", { intel: true, deep: false });
+r.available;     // true
+r.cheapest;      // { registrar: "porkbun", year1_usd_cents: 999, ... }
+r.checkout_url;  // "https://porkbun.com/checkout/search?q=mycoolapp.dev"
 ```
 
-## MCP Server
+## MCP server
 
-Add to your Claude Code or Cursor config:
+Add to Claude Code / Cursor:
 
 ```json
 {
   "mcpServers": {
-    "domainpeek": {
-      "command": "npx",
-      "args": ["-y", "domainpeek", "--mcp"]
-    }
+    "domainpeek": { "command": "npx", "args": ["-y", "domainpeek", "--mcp"] }
   }
 }
 ```
 
-Tools available:
-- `check_domain` -- check availability and pricing for one domain
-- `check_domains` -- batch check up to 10 domains
-- `get_pricing` -- get registrar pricing for a TLD
+Tools: `check_domain` (with optional `deep`), `check_domains`, `get_pricing`, `search_name`, `brand_check`, `guard_name`.
 
 ## How it works
 
-1. **Pricing data** is verified hourly against Porkbun's public pricing API by the maintainer's CI and published as a static JSON file. Registrar list prices are per-TLD and change rarely, so each price carries a `price_updated_at` marking when it last actually changed (not when it was last fetched). Your CLI fetches this file and caches it locally for 1 hour. No API keys needed.
+1. **Availability** — live RDAP lookup (falls back to a DNS NS pre-check for speed). Free, standardized, keyless.
+2. **Intelligence** — the RDAP record we already fetch is parsed for registration data; the system resolver supplies DNS/email signals; a TLS handshake reads the cert. All keyless. Wayback and crt.sh are best-effort and degrade to nothing when they're down.
+3. **Pricing** — verified hourly against Porkbun's public pricing API in CI and published as a static JSON file the CLI caches for 1 hour. `price_updated_at` marks when a price last *changed*, not when it was fetched.
+4. **Brand checks** — `registry.npmjs.org` and the GitHub users API (unauthenticated, so subject to GitHub's 60 req/hr cap; returns unknown when throttled).
 
-2. **Availability** is checked live via RDAP (the modern replacement for WHOIS). Free, standardized, no authentication required.
-
-3. **DNS pre-check** is used as a speed optimization -- if NS records exist, the domain is almost certainly taken, so we skip the slower RDAP call.
+No API keys anywhere. The only thing that ever leaves your machine is the domain/name you ask about.
 
 ## Pricing coverage
 
-Currently tracking pricing across 8 TLDs from Porkbun (their full public price list). More registrars will be added as live scrapers are built for each:
+Pricing currently comes from **Porkbun** (their full public price list, 8+ TLDs, hourly-verified). More registrars will be added as keyless/live sources become available — most registrars gate pricing behind API keys, which would break the zero-config promise.
 
-| Registrar | Status |
-|-----------|--------|
-| Porkbun | Live (all TLDs they sell) |
-| Cloudflare, Namecheap, GoDaddy, Spaceship | Planned |
+## Contributing
 
-Pricing is verified hourly. Since per-TLD list prices change rarely, `price_updated_at` reflects when a price last changed rather than the verification time.
+Issues and PRs welcome — especially new keyless intelligence sources and registrar pricing integrations. MIT licensed.
 
 ## License
 

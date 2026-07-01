@@ -7,6 +7,7 @@ export interface DomainResult {
   cheapest: RegistrarPrice | null;
   tld_pricing: true;
   pricing_stale?: boolean;
+  checkout_url?: string | null;
   registration?: RegistrationIntel | null;
   dns?: DnsSignals | null;
   pricing_notes?: string[];

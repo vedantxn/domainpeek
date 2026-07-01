@@ -135,6 +135,11 @@ function formatTable(results: DomainResult[]): string {
       lines.push("  (pricing data not available)");
     }
 
+    if (r.checkout_url) {
+      const reg = r.cheapest?.registrar ?? "registrar";
+      lines.push("", `  → register at ${reg}: ${r.checkout_url}`);
+    }
+
     if (r.registration) lines.push(...formatRegistration(r.registration));
     if (r.dns) lines.push(...formatDnsSignals(r.dns));
     lines.push(...formatExtraIntel(r));
@@ -179,6 +184,9 @@ function formatNameSearch(res: NameSearchResult): string {
     const c = res.cheapest_available.cheapest;
     const priceStr = c ? ` at $${(c.year1_usd_cents / 100).toFixed(2)}` : "";
     lines.push(`  Cheapest available: ${res.cheapest_available.domain}${priceStr}`);
+    if (res.cheapest_available.checkout_url) {
+      lines.push(`  → register: ${res.cheapest_available.checkout_url}`);
+    }
   }
 
   if (res.brand) {

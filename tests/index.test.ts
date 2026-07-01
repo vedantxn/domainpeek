@@ -33,6 +33,9 @@ describe("checkDomain", () => {
     expect(result.prices).toHaveLength(1);
     expect(result.cheapest?.registrar).toBe("porkbun");
     expect(result.tld_pricing).toBe(true);
+    expect(result.checkout_url).toBe(
+      "https://porkbun.com/checkout/search?q=available-test.com"
+    );
   });
 
   it("sets pricing_stale when pricing cache is stale", async () => {

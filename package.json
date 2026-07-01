@@ -1,6 +1,6 @@
 {
   "name": "domainpeek",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Domain availability, cheapest registrar price, and keyless domain intelligence for AI agents. Zero config.",
   "type": "module",
   "main": "./dist/index.js",
@@ -35,7 +35,7 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/vedantxn/agent-domain"
+    "url": "https://github.com/vedantxn/domainpeek"
   },
   "engines": {
     "node": ">=18"

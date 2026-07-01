@@ -7,6 +7,7 @@ import { tlsCert } from "./intel/tls.js";
 import { detectForSale, estimateDropDate } from "./intel/acquisition.js";
 import { waybackHistory, certHistory } from "./intel/history.js";
 import { defensiveVariants } from "./intel/defensive.js";
+import { checkoutUrl } from "./checkout.js";
 import type {
   BatchCheckResult,
   BrandResult,
@@ -148,6 +149,12 @@ export async function checkDomain(
   };
   if (stale) result.pricing_stale = true;
   if (notes.length) result.pricing_notes = notes;
+
+  // Available domains get a direct registration deep link to the cheapest registrar.
+  if (available === true && cheapest) {
+    const url = checkoutUrl(cheapest.registrar, normalized);
+    if (url) result.checkout_url = url;
+  }
 
   // Intel only adds value for existing domains (taken or unknown); available
   // names have nothing to inspect, so we skip the DNS/web noise there.

@@ -19,7 +19,7 @@ const server = new McpServer({
 
 server.tool(
   "check_domain",
-  "Check if a domain is available, get cheapest-registrar pricing, plus intelligence: registration age/expiry, registrar, 'dropping soon' + estimated drop date, DNSSEC, nameservers, website/email presence, SPF/DMARC, and for-sale detection. Set deep=true to also fetch the live TLS cert, Wayback history, and crt.sh subdomains",
+  "Check if a domain is available, get cheapest-registrar pricing plus a direct checkout_url to register it when available, and intelligence: registration age/expiry, registrar, 'dropping soon' + estimated drop date, DNSSEC, nameservers, website/email presence, SPF/DMARC, and for-sale detection. Set deep=true to also fetch the live TLS cert, Wayback history, and crt.sh subdomains",
   {
     domain: z.string().describe("Domain name to check (e.g. example.com)"),
     deep: z
