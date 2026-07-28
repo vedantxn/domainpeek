@@ -1,6 +1,6 @@
 # domainpeek
 
-**The zero-config domain intelligence CLI for humans and AI agents.** Check availability, find the cheapest registrar with a one-click register link, and pull deep intelligence on any domain — with no API keys, no accounts, no setup.
+**The zero-config domain intelligence CLI for humans and AI agents.** Check availability, find the cheapest registrar with a one-click register link, and pull deep intelligence on any domain with no API keys, no accounts, no setup.
 
 ```bash
 npx domainpeek check stripe.com
