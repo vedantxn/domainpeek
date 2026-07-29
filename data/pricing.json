@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated_at": "2026-07-29T15:52:05.382Z",
+  "updated_at": "2026-07-29T19:24:40.509Z",
   "registrars": [
     "porkbun"
   ],
@@ -4521,11 +4521,11 @@
       "prices": [
         {
           "registrar": "porkbun",
-          "year1_usd_cents": 4129,
-          "renewal_usd_cents": 4129,
-          "transfer_usd_cents": 4129,
+          "year1_usd_cents": 1576,
+          "renewal_usd_cents": 1576,
+          "transfer_usd_cents": 1576,
           "url": "https://porkbun.com",
-          "price_updated_at": "2026-06-30T18:06:48.429Z"
+          "price_updated_at": "2026-07-29T19:24:40.509Z"
         }
       ]
     },
