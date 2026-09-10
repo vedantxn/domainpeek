@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated_at": "2026-09-09T18:24:47.982Z",
+  "updated_at": "2026-09-10T04:25:36.738Z",
   "registrars": [
     "porkbun"
   ],
@@ -261,11 +261,11 @@
       "prices": [
         {
           "registrar": "porkbun",
-          "year1_usd_cents": 4050,
-          "renewal_usd_cents": 4050,
-          "transfer_usd_cents": 4050,
+          "year1_usd_cents": 4056,
+          "renewal_usd_cents": 4056,
+          "transfer_usd_cents": 4056,
           "url": "https://porkbun.com",
-          "price_updated_at": "2026-09-06T03:57:48.414Z"
+          "price_updated_at": "2026-09-10T04:25:36.738Z"
         }
       ]
     },
@@ -273,11 +273,11 @@
       "prices": [
         {
           "registrar": "porkbun",
-          "year1_usd_cents": 4050,
-          "renewal_usd_cents": 4050,
-          "transfer_usd_cents": 4050,
+          "year1_usd_cents": 4056,
+          "renewal_usd_cents": 4056,
+          "transfer_usd_cents": 4056,
           "url": "https://porkbun.com",
-          "price_updated_at": "2026-09-06T03:57:48.414Z"
+          "price_updated_at": "2026-09-10T04:25:36.738Z"
         }
       ]
     },
@@ -286,10 +286,10 @@
         {
           "registrar": "porkbun",
           "year1_usd_cents": 3635,
-          "renewal_usd_cents": 4050,
-          "transfer_usd_cents": 4050,
+          "renewal_usd_cents": 4056,
+          "transfer_usd_cents": 4056,
           "url": "https://porkbun.com",
-          "price_updated_at": "2026-09-06T03:57:48.414Z"
+          "price_updated_at": "2026-09-10T04:25:36.738Z"
         }
       ]
     },
@@ -309,11 +309,11 @@
       "prices": [
         {
           "registrar": "porkbun",
-          "year1_usd_cents": 4050,
-          "renewal_usd_cents": 4050,
-          "transfer_usd_cents": 4050,
+          "year1_usd_cents": 4056,
+          "renewal_usd_cents": 4056,
+          "transfer_usd_cents": 4056,
           "url": "https://porkbun.com",
-          "price_updated_at": "2026-09-06T03:57:48.414Z"
+          "price_updated_at": "2026-09-10T04:25:36.738Z"
         }
       ]
     },
@@ -321,11 +321,11 @@
       "prices": [
         {
           "registrar": "porkbun",
-          "year1_usd_cents": 4050,
-          "renewal_usd_cents": 4050,
-          "transfer_usd_cents": 4050,
+          "year1_usd_cents": 4056,
+          "renewal_usd_cents": 4056,
+          "transfer_usd_cents": 4056,
           "url": "https://porkbun.com",
-          "price_updated_at": "2026-09-06T03:57:48.414Z"
+          "price_updated_at": "2026-09-10T04:25:36.738Z"
         }
       ]
     },
@@ -334,10 +334,10 @@
         {
           "registrar": "porkbun",
           "year1_usd_cents": 3635,
-          "renewal_usd_cents": 4050,
-          "transfer_usd_cents": 4050,
+          "renewal_usd_cents": 4056,
+          "transfer_usd_cents": 4056,
           "url": "https://porkbun.com",
-          "price_updated_at": "2026-09-06T03:57:48.414Z"
+          "price_updated_at": "2026-09-10T04:25:36.738Z"
         }
       ]
     },
@@ -10557,11 +10557,11 @@
       "prices": [
         {
           "registrar": "porkbun",
-          "year1_usd_cents": 1203,
-          "renewal_usd_cents": 1203,
+          "year1_usd_cents": 1202,
+          "renewal_usd_cents": 1202,
           "transfer_usd_cents": 0,
           "url": "https://porkbun.com",
-          "price_updated_at": "2026-09-09T18:24:47.982Z"
+          "price_updated_at": "2026-09-10T04:25:36.738Z"
         }
       ]
     },
@@ -10569,11 +10569,11 @@
       "prices": [
         {
           "registrar": "porkbun",
-          "year1_usd_cents": 1203,
-          "renewal_usd_cents": 1203,
+          "year1_usd_cents": 1202,
+          "renewal_usd_cents": 1202,
           "transfer_usd_cents": 0,
           "url": "https://porkbun.com",
-          "price_updated_at": "2026-09-09T18:24:47.982Z"
+          "price_updated_at": "2026-09-10T04:25:36.738Z"
         }
       ]
     },
@@ -10606,10 +10606,10 @@
         {
           "registrar": "porkbun",
           "year1_usd_cents": 894,
-          "renewal_usd_cents": 920,
-          "transfer_usd_cents": 900,
+          "renewal_usd_cents": 918,
+          "transfer_usd_cents": 898,
           "url": "https://porkbun.com",
-          "price_updated_at": "2026-09-09T18:24:47.982Z"
+          "price_updated_at": "2026-09-10T04:25:36.738Z"
         }
       ]
     },
@@ -10665,11 +10665,11 @@
       "prices": [
         {
           "registrar": "porkbun",
-          "year1_usd_cents": 4265,
-          "renewal_usd_cents": 4265,
-          "transfer_usd_cents": 4265,
+          "year1_usd_cents": 4278,
+          "renewal_usd_cents": 4278,
+          "transfer_usd_cents": 4278,
           "url": "https://porkbun.com",
-          "price_updated_at": "2026-09-09T04:05:27.844Z"
+          "price_updated_at": "2026-09-10T04:25:36.738Z"
         }
       ]
     },
